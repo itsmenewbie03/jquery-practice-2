@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASIC CRUD - JQUERY PRACTICE</title>
+    <script src="js/jquery-3.6.4.min.js"></script>
+    <script>
+        // initial data
+        const students = [
+            {
+                "id": 1001,
+                "name": "Jason",
+                "address": "Sumpong",
+                "age": 20,
+                "gender": "Male"
+            },
+            {
+                "id": 1002,
+                "name": "Mark",
+                "address": "Casisang",
+                "age": 20,
+                "gender": "Male"
+            },
+            {
+                "id": 1003,
+                "name": "Angel",
+                "address": "Aglayan",
+                "age": 20,
+                "gender": "Female"
+            }
+        ];
+        // function to load a data to a table
+        function load_data(data = null) {
+            // get the table element
+            const table = $("#myTable > tbody");
+
+            // reset the rows after the heading to avoid duplication of data
+            $('#myTable > tbody > tr:first').nextAll().remove()
+
+            // setting the data
+            const students_local = data ?? students;
+
+            // let students_local;
+            // if(data==null){
+            //     students_local = students;
+            // } else {
+            //     students_local = data;
+            // }
+
+            // looping through the data
+            for (const student of students_local) {
+                // destructuring the properties
+                const { id, name, address, age, gender } = student;
+                const data = `
+                    <tr>
+                        <td>${id}</td>
+                        <td>${name}</td>
+                        <td>${address}</td>
+                        <td>${age}</td>
+                        <td>${gender}</td>
+                        <td>
+                            <input type="button" value="Edit" onclick="edit_data('${id}')"/>
+                            <input type="button" value="Delete" onclick="delete_data('${id}')"/>
+                        </td>
+                    </tr>
+                    `;
+                table.append(data);
+            }
+        }
+
+        function edit_data(id) {
+            // uses Array.find
+            const student = students.find(s => s.id == id)
+            // let student_result;
+            // for (const student of students) {
+            //     if(student.id == id){
+            //         student_result = student;
+            //         break;
+            //     }
+            // }
+            if (!student) return;
+            for (const student_prop of Object.keys(student)) {
+                $(`input[name='${student_prop}']`).val(student[student_prop]);
+            }
+        }
+
+        function delete_data(id) {
+            const student = students.find(s => s.id == id);
+            if (!student) return;
+
+            const index = students.indexOf(student);
+
+            students.splice(index, 1);
+
+            load_data()
+        }
+
+        $(document).ready(function () {
+            // calls the function to load the data
+            load_data();
+            // bind the submit event to the student form
+            $("#studentForm").submit(function (event) {
+
+                // prevent the default behavior
+                event.preventDefault();
+
+                const formData = $(this).serializeArray();
+
+                // formData looks like
+                // const temp = [{ "name": "id", "value": "1001" }, { "name": "name", "value": "DM Newbie" }, { "name": "address", "value": "Canada" }, { "name": "age", "value": "20" }, { "name": "gender", "value": "God" }];
+
+                const student_data = {};
+
+                for (const input of formData) {
+                    student_data[input.name] = input.value;
+                }
+
+                // check if student id is in array already
+                // if yes, then update the data
+                const student = students.find(s => s.id == student_data.id)
+
+                if (!student) {
+                    // student id is new will push the data
+                    students.push(student_data);
+                } else {
+                    // student is exists so we will update the data
+                    const index = students.indexOf(student);
+                    students[index] = student_data;
+                }
+                // calls load_data again to update the table
+                load_data()
+                // console.log(JSON.stringify(formData));
+            })
+
+            // bind the submit event for search
+            $("#searchForm").submit(function (event) {
+                event.preventDefault();
+                const query = $('input[name="query"]').val();
+                // will do greedy search will also try to match substrings
+
+                const regex = new RegExp(query, 'gi')
+
+                const result = students.filter(student => {
+                    const values = Object.values(student);
+
+                    for (const value of values) {
+                        if (regex.test(value.toString())) {
+                            return true
+                        }
+                    }
+                })
+
+                load_data(result);
+            })
+
+            $("#resetBtn").click(function (event) {
+                load_data();
+            });
+        });
+    </script>
+    <style>
+        table,
+        tr,
+        th,
+        td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <form action="#" id="studentForm">
+        <fieldset>
+            <legend>Add New Student</legend>
+            <input type="text" name="id" placeholder="ID" required>
+            <input type="text" name="name" placeholder="Name" required>
+            <input type="text" name="address" placeholder="Address" required>
+            <input type="number" name="age" placeholder="Age" required>
+            <input type="text" name="gender" placeholder="Gender" required>
+            <input type="submit" value="Add New Student">
+        </fieldset>
+    </form>
+    <form action="#" id="searchForm">
+        <fieldset>
+            <legend>Utilities</legend>
+            <input type="text" name="query" placeholder="Search database" required>
+            <input type="submit" value="Search">
+            <input type="button" value="Reset" id="resetBtn">
+        </fieldset>
+    </form>
+    <br>
+    <table id="myTable">
+        <caption>STUDENT INFORMATION</caption>
+        <tr>
+            <th>Student ID</th>
+            <th>Student Name</th>
+            <th>Address</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Action</th>
+        </tr>
+    </table>
+</body>
+
+</html>
